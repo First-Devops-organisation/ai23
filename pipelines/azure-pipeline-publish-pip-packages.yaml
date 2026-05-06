@@ -45,9 +45,13 @@ steps:
       echo "Downloading JAR from ${{ parameters.jarUrl }}..."
       wget -O package.jar "${{ parameters.jarUrl }}"
       
+      echo "Verifying downloaded file:"
+      ls -lh package.jar
+      file package.jar || true
+      
       echo "Deploying to Azure Artifacts..."
-      # The repositoryId must EXACTLY match the artifactsFeeds string above
-      mvn -e deploy:deploy-file \
+      # Added -X for full debug logging to capture the exact HTTP error code
+      mvn -X -e deploy:deploy-file \
         -DgroupId="${{ parameters.groupId }}" \
         -DartifactId="${{ parameters.artifactId }}" \
         -Dversion="${{ parameters.version }}" \
