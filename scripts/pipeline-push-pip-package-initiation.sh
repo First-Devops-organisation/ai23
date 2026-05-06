@@ -7,6 +7,6 @@ fi
 echo "installing artifacts-keyring pip package"
 sudo python3 -m pip install keyring artifacts-keyring
 echo "installing wheel and setuptools"
-sudo python3 -m pip install wheel "setuptools<59.0.0"
+sudo python3 -m pip install wheel setuptools
 echo "installing twine pip package"
 sudo python3 -m pip install twine
