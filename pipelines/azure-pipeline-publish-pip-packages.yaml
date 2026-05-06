@@ -3,28 +3,54 @@ trigger: none
 pool:
   vmImage: 'ubuntu-latest'
 
+parameters:
+- name: jarUrl
+  displayName: "Direct URL to JAR file"
+  type: string
+  default: "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
+- name: groupId
+  displayName: "Maven Group ID"
+  type: string
+  default: "junit"
+- name: artifactId
+  displayName: "Maven Artifact ID"
+  type: string
+  default: "junit"
+- name: version
+  displayName: "Maven Version"
+  type: string
+  default: "4.13.2"
+
 variables:
-  # Ensure this matches the feed name in Azure Artifacts
-  # and the <id> in your pom.xml <repository> section.
-  feedName: 'github_migration_feed'
+  feedName: 'your-maven-feed'
+  # Update these two variables to match your Azure DevOps organization and project
+  adoOrg: 'YashTech-DevOps'
+  adoProject: 'YASH-DevOps-Serverless'
 
 steps:
 - task: MavenAuthenticate@0
   displayName: 'Maven Authenticate'
   inputs:
-    artifactsFeeds: '$(feedName)'
+    artifactsFeeds: 'github_migration_feed'
 
-- task: Maven@4
-  displayName: 'Build and Deploy Maven Package'
+- task: Bash@3
+  displayName: 'Download and Push JAR to Azure Artifacts'
   inputs:
-    mavenPomFile: 'pom.xml'
-    # 'deploy' goal builds the package and uploads it to the feed
-    goals: 'deploy'
-    options: '-DskipTests'
-    publishJUnitResults: false
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11'
-    mavenVersionOption: 'Default'
-    mavenAuthenticateFeed: false
-    effectivePomSkip: false
-    sonarQubeRunAnalysis: false
+    targetType: 'inline'
+    script: |
+      set -e
+      
+      echo "Downloading JAR from ${{ parameters.jarUrl }}..."
+      wget -O package.jar "${{ parameters.jarUrl }}"
+      
+      echo "Deploying to Azure Artifacts..."
+      mvn deploy:deploy-file \
+        -DgroupId="${{ parameters.groupId }}" \
+        -DartifactId="${{ parameters.artifactId }}" \
+        -Dversion="${{ parameters.version }}" \
+        -Dpackaging="jar" \
+        -Dfile="package.jar" \
+        -DrepositoryId="$(feedName)" \
+        -Durl="https://pkgs.dev.azure.com/$(adoOrg)/$(adoProject)/_packaging/$(feedName)/maven/v1"
+      
+      echo "Deployment successful!"
