@@ -11,15 +11,15 @@ parameters:
 - name: groupId
   displayName: "Maven Group ID"
   type: string
-  default: "junit"
+  default: "com.mycompany.test"
 - name: artifactId
   displayName: "Maven Artifact ID"
   type: string
-  default: "junit"
+  default: "my-test-package"
 - name: version
   displayName: "Maven Version"
   type: string
-  default: "4.13.2"
+  default: "1.0.0"
 
 variables:
   feedName: 'github_migration_feed'
