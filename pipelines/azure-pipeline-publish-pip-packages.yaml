@@ -8,9 +8,9 @@ parameters:
   type: string
 
 
-variables:
-  - name: feedName
-    value: "pip-feed"
+# variables:
+#   - name: feedName
+#     value: "pip-feed"
 
 stages:
   - stage: publish_pip_packages
@@ -31,7 +31,7 @@ stages:
         - task: TwineAuthenticate@0
           displayName: Configure twine authentication
           inputs:
-            artifactFeeds: $(feedName)
+            artifactFeeds: 'github_migration_feed'
         - task: Bash@3
           name: publish_pip_pkg
           displayName: "Publish to Azure Artifacts"
