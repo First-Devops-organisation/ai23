@@ -1,0 +1,19 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yourcompany</groupId>
+    <artifactId>your-app</artifactId>
+    <version>1.0.0</version>
+
+    <!-- This section is REQUIRED for Maven to know where to deploy -->
+    <distributionManagement>
+        <repository>
+            <!-- The ID must match the feed name provided in the MavenAuthenticate task -->
+            <id>your-maven-feed</id>
+            <url>https://pkgs.dev.azure.com/YOUR_ORGANIZATION/YOUR_PROJECT/_packaging/your-maven-feed/maven/v1</url>
+        </repository>
+    </distributionManagement>
+
+</project>
