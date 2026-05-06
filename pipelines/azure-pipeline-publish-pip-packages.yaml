@@ -25,7 +25,7 @@ stages:
           name: initiation
           displayName: "Initiation"
           inputs:
-            pwsh: true
+            pwsh: false
             targetType: 'filePath'
             filePath: "scripts/pipeline-push-pip-package-initiation.sh"
         - task: TwineAuthenticate@0
@@ -36,7 +36,7 @@ stages:
           name: publish_pip_pkg
           displayName: "Publish to Azure Artifacts"
           inputs:
-            pwsh: true
+            pwsh: false
             targetType: 'filePath'
             filePath: "scripts/pipeline-push-pip-package.sh"
             arguments: -o '$(adoOrgName)' -f '$(feedName)' -p '${{parameters.package}}' -r $(PYPIRC_PATH)
