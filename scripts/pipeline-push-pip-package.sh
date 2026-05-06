@@ -47,5 +47,5 @@ with open(path, 'w', encoding='utf-8') as f: f.write(msg.as_string())
 done
 
 echo "Uploading to Azure Artifacts..."
-python3 -m twine upload -r $FEED --config-file $PYPIRCPATH $TEMPDIR/*
+python3 -m twine upload -r $FEED --skip-existing --config-file $PYPIRCPATH $TEMPDIR/*
 echo "Upload complete!"
