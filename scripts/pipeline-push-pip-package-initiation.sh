@@ -5,8 +5,8 @@ if [ -z $BASH_VERSION ]; then
 fi
 
 echo "installing artifacts-keyring pip package"
-sudo pip install keyring artifacts-keyring
-echo "installing wheel pip package"
-sudo pip install wheel
+sudo python3 -m pip install keyring artifacts-keyring
+echo "installing wheel and setuptools"
+sudo python3 -m pip install wheel "setuptools<59.0.0"
 echo "installing twine pip package"
-sudo pip install twine
+sudo python3 -m pip install twine
