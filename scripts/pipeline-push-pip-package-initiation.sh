@@ -4,9 +4,7 @@ if [ -z $BASH_VERSION ]; then
   exit 1
 fi
 
-echo "installing artifacts-keyring pip package"
-sudo python3 -m pip install keyring artifacts-keyring
-echo "installing wheel and setuptools"
-sudo python3 -m pip install wheel setuptools
-echo "installing twine pip package"
-sudo python3 -m pip install twine
+echo "Updating pip and installing core tools"
+sudo python3 -m pip install --upgrade pip
+sudo python3 -m pip install wheel setuptools twine artifacts-keyring
+echo "Installation complete."
