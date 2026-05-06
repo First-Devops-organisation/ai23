@@ -39,78 +39,33 @@ TEMPDIR='pip-temp'
 echo "creating temp directory"
 sudo mkdir -p $TEMPDIR
 sudo dir
-echo "downloading package $PACKAGE"
+echo "Building wheel for $PACKAGE"
 sudo python3 -m pip wheel $PACKAGE -w $TEMPDIR
-# Ensure the current user can read/write the downloaded wheels
 sudo chown -R $(whoami):$(whoami) $TEMPDIR
 
-echo "Cleaning metadata for Azure Artifacts compatibility"
+echo "Applying Azure Artifacts compatibility fixes"
 for whl in $TEMPDIR/*.whl; do
-    if [ ! -f "$whl" ]; then continue; fi
-    echo "Processing $whl..."
-    
-    # Create a unique temp dir for unpacking
+    [ -f "$whl" ] || continue
+    echo "  Cleaning $whl"
     UNPACK_DIR=$(mktemp -d)
+    python3 -m wheel unpack "$whl" -d "$UNPACK_DIR"
     
-    if python3 -m wheel unpack "$whl" -d "$UNPACK_DIR"; then
-        # Find the METADATA file
-        METADATA_FILE=$(find "$UNPACK_DIR" -name "METADATA")
-        
-        if [ -n "$METADATA_FILE" ]; then
-            echo "  Fixing metadata in $METADATA_FILE"
-            python3 - <<EOF
-import sys
+    # Use a concise Python one-liner to fix metadata
+    METADATA_FILE=$(find "$UNPACK_DIR" -name "METADATA")
+    python3 -c "
 from email import message_from_string
-
-path = "$METADATA_FILE"
-with open(path, 'r', encoding='utf-8') as f:
-    msg = message_from_string(f.read())
-
-# Fields allowed in Metadata 2.1 (PEP 566)
-# We specifically want to remove fields introduced in 2.2+ like 'Dynamic' 
-# or non-standard ones like 'License-File' that Azure rejects.
-to_remove = ['License-File', 'License-Files', 'Dynamic']
-for field in to_remove:
-    while field in msg:
-        del msg[field]
-
-# Force Metadata-Version to 2.1
-if 'Metadata-Version' in msg:
-    msg.replace_header('Metadata-Version', '2.1')
-else:
-    msg.add_header('Metadata-Version', '2.1')
-
-with open(path, 'w', encoding='utf-8') as f:
-    f.write(msg.as_string())
-EOF
-        fi
-        
-        # Find the actual package directory inside UNPACK_DIR
-        PKG_DIR_INTERNAL=$(find "$UNPACK_DIR" -mindepth 1 -maxdepth 1 -type d)
-        
-        if [ -n "$PKG_DIR_INTERNAL" ]; then
-            echo "  Repacking wheel..."
-            # Delete the original wheel first to avoid overwriting/deletion conflicts
-            rm -f "$whl"
-            if python3 -m wheel pack "$PKG_DIR_INTERNAL" -d "$TEMPDIR"; then
-                echo "  Successfully cleaned $whl"
-            else
-                echo "  Failed to repack wheel $whl"
-            fi
-        else
-            echo "  Could not find internal package directory for $whl"
-        fi
-    else
-        echo "  Failed to unpack wheel $whl. It might be malformed or wheel package is missing."
-    fi
+path = '$METADATA_FILE'
+with open(path, 'r', encoding='utf-8') as f: msg = message_from_string(f.read())
+for h in ['License-File', 'License-Files', 'Dynamic']:
+    while h in msg: del msg[h]
+msg.replace_header('Metadata-Version', '2.1')
+with open(path, 'w', encoding='utf-8') as f: f.write(msg.as_string())
+"
     
-    # Clean up temp dir
+    rm -f "$whl"
+    python3 -m wheel pack $(find "$UNPACK_DIR" -mindepth 1 -maxdepth 1 -type d) -d "$TEMPDIR"
     rm -rf "$UNPACK_DIR"
 done
 
-echo "Final list of packages to upload:"
-ls -l $TEMPDIR
-
-echo "Uploading package $PACKAGE"
-# Use the config file provided by TwineAuthenticate task
-python3 -m twine upload -r $FEED --disable-progress-bar --config-file $PYPIRCPATH $TEMPDIR/*
+echo "Uploading to Azure Artifacts..."
+python3 -m twine upload -r $FEED --config-file $PYPIRCPATH $TEMPDIR/*
