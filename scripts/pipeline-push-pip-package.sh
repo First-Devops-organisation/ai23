@@ -42,4 +42,4 @@ sudo dir
 echo "downloading package $PACKAGE"
 sudo pip wheel $PACKAGE -w $TEMPDIR
 echo "Uploading packge $PACKAGE to $FEED via URL $URL"
-twine upload -r $FEED --skip-existing --disable-progress-bar --config-file $PYPIRCPATH $TEMPDIR/*
+twine upload -r $FEED  --disable-progress-bar --config-file $PYPIRCPATH $TEMPDIR/*
