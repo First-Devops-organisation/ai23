@@ -8,9 +8,9 @@ parameters:
   type: string
 
 
-# variables:
-#   - name: feedName
-#     value: "pip-feed"
+variables:
+  - name: feedName
+    value: "github_migration_feed"
 
 stages:
   - stage: publish_pip_packages
