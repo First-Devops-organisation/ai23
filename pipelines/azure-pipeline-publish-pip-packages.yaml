@@ -1,39 +1,30 @@
 trigger: none
 
-parameters:
-- name: package
-  displayName: "Pip Package Name (e.g. azure-cli)"
-  type: string
+pool:
+  vmImage: 'ubuntu-latest'
 
 variables:
-  - name: feedName
-    value: "github_migration_feed"
+  # Ensure this matches the feed name in Azure Artifacts
+  # and the <id> in your pom.xml <repository> section.
+  feedName: 'github_migration_feed'
 
-stages:
-  - stage: publish_pip_packages
-    displayName: "Publish pip packages"
-    jobs:
-    - job: download_publish_pip_packages
-      displayName: Download and Publish PIP Packages
-      pool:
-        vmImage: "ubuntu-latest"
-      steps:
-        - task: Bash@3
-          displayName: "Step 1: Install Tools"
-          inputs:
-            pwsh: false
-            targetType: 'filePath'
-            filePath: "scripts/pipeline-push-pip-package-initiation.sh"
+steps:
+- task: MavenAuthenticate@0
+  displayName: 'Maven Authenticate'
+  inputs:
+    artifactsFeeds: '$(feedName)'
 
-        - task: TwineAuthenticate@0
-          displayName: "Step 2: Configure Feed Connection"
-          inputs:
-            artifactFeeds: $(feedName)
-
-        - task: Bash@3
-          displayName: "Step 3: Build, Clean, and Push"
-          inputs:
-            pwsh: false
-            targetType: 'filePath'
-            filePath: "scripts/pipeline-push-pip-package.sh"
-            arguments: -o '$(adoOrgName)' -f '$(feedName)' -p '${{parameters.package}}' -r $(PYPIRC_PATH)
+- task: Maven@4
+  displayName: 'Build and Deploy Maven Package'
+  inputs:
+    mavenPomFile: 'pom.xml'
+    # 'deploy' goal builds the package and uploads it to the feed
+    goals: 'deploy'
+    options: '-DskipTests'
+    publishJUnitResults: false
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.11'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false
