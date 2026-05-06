@@ -58,10 +58,31 @@ for whl in $TEMPDIR/*.whl; do
         
         if [ -n "$METADATA_FILE" ]; then
             echo "  Fixing metadata in $METADATA_FILE"
-            # Remove offending License fields
-            sed -i '/^License-File/d' "$METADATA_FILE"
-            # Downgrade Metadata-Version to 2.1 (Azure Artifacts often rejects 2.2+)
-            sed -i 's/^Metadata-Version: .*/Metadata-Version: 2.1/' "$METADATA_FILE"
+            python3 - <<EOF
+import sys
+from email import message_from_string
+
+path = "$METADATA_FILE"
+with open(path, 'r', encoding='utf-8') as f:
+    msg = message_from_string(f.read())
+
+# Fields allowed in Metadata 2.1 (PEP 566)
+# We specifically want to remove fields introduced in 2.2+ like 'Dynamic' 
+# or non-standard ones like 'License-File' that Azure rejects.
+to_remove = ['License-File', 'License-Files', 'Dynamic']
+for field in to_remove:
+    while field in msg:
+        del msg[field]
+
+# Force Metadata-Version to 2.1
+if 'Metadata-Version' in msg:
+    msg.replace_header('Metadata-Version', '2.1')
+else:
+    msg.add_header('Metadata-Version', '2.1')
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(msg.as_string())
+EOF
         fi
         
         # Find the actual package directory inside UNPACK_DIR
