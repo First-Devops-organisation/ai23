@@ -56,7 +56,7 @@ for whl in $TEMPDIR/*.whl; do
 from email import message_from_string
 path = '$METADATA_FILE'
 with open(path, 'r', encoding='utf-8') as f: msg = message_from_string(f.read())
-for h in ['License-File', 'License-Files', 'Dynamic']:
+for h in ['License-File', 'License-Files', 'Dynamic', 'License-Expression']:
     while h in msg: del msg[h]
 msg.replace_header('Metadata-Version', '2.1')
 with open(path, 'w', encoding='utf-8') as f: f.write(msg.as_string())
