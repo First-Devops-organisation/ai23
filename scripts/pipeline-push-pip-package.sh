@@ -14,7 +14,7 @@ TEMPDIR='pip-temp'
 mkdir -p $TEMPDIR
 
 echo "Building wheel for $PACKAGE..."
-sudo python3 -m pip wheel $PACKAGE -w $TEMPDIR --break-system-packages
+sudo python3 -m pip wheel $PACKAGE -w $TEMPDIR
 sudo chown -R $(whoami):$(whoami) $TEMPDIR
 
 echo "Applying Azure Artifacts compatibility fixes..."
