@@ -22,7 +22,7 @@ parameters:
   default: "1.0.0"
 
 variables:
-  feedName: 'github_migration_feed'
+  feedName: 'CommonArtifacts'
   # Update these two variables to match your Azure DevOps organization and project
   adoOrg: 'YashTech-DevOps'
   adoProject: 'YASH-DevOps-Serverless'
