@@ -19,10 +19,10 @@ parameters:
 - name: version
   displayName: "Maven Version"
   type: string
-  default: "1.0.0"
+  default: "1.0.1"
 
 variables:
-  feedName: 'CommonArtifacts'
+  feedName: 'github_migration_feed'
   # Update these two variables to match your Azure DevOps organization and project
   adoOrg: 'YashTech-DevOps'
   adoProject: 'YASH-DevOps-Serverless'
@@ -47,7 +47,7 @@ steps:
       
       echo "Deploying to Azure Artifacts..."
       # The repositoryId must EXACTLY match the artifactsFeeds string above
-      mvn deploy:deploy-file \
+      mvn -e deploy:deploy-file \
         -DgroupId="${{ parameters.groupId }}" \
         -DartifactId="${{ parameters.artifactId }}" \
         -Dversion="${{ parameters.version }}" \
