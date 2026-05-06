@@ -19,24 +19,29 @@ parameters:
 - name: version
   displayName: "Maven Version"
   type: string
-  default: "1.0.1"
+  default: "1.0.0"
 
 variables:
-  feedName: 'github_migration_feed'
-  # Update these two variables to match your Azure DevOps organization and project
-  adoOrg: 'YashTech-DevOps'
-  adoProject: 'YASH-DevOps-Serverless'
+  # Format: us-central1-maven.pkg.dev/YOUR_GCP_PROJECT_ID/YOUR_REPO_NAME
+  googleArtifactRegistryUrl: 'us-central1-maven.pkg.dev/my-gcp-project/my-maven-repo'
 
 steps:
-- task: MavenAuthenticate@0
-  displayName: 'Maven Authenticate'
-  inputs:
-    # For project-scoped feeds, MavenAuthenticate requires "ProjectName/FeedName"
-    # If your feed is organization-scoped, remove the "$(System.TeamProject)/" part.
-    artifactsFeeds: '$(System.TeamProject)/$(feedName)'
-
+# 1. Authenticate to Google Cloud
+# You must create a pipeline secret variable named 'GCP_SERVICE_ACCOUNT_KEY' containing your JSON key
 - task: Bash@3
-  displayName: 'Download and Push JAR to Azure Artifacts'
+  displayName: 'Authenticate with Google Cloud'
+  inputs:
+    targetType: 'inline'
+    script: |
+      echo "Setting up Google Cloud authentication..."
+      echo "$(GCP_SERVICE_ACCOUNT_KEY)" > gcp_key.json
+      gcloud auth activate-service-account --key-file=gcp_key.json
+      # Set the GOOGLE_APPLICATION_CREDENTIALS env var so Maven picks it up automatically
+      echo "##vso[task.setvariable variable=GOOGLE_APPLICATION_CREDENTIALS]$(pwd)/gcp_key.json"
+
+# 2. Download and Push to GAR
+- task: Bash@3
+  displayName: 'Download and Push JAR to Google Artifact Registry'
   inputs:
     targetType: 'inline'
     script: |
@@ -45,30 +50,16 @@ steps:
       echo "Downloading JAR from ${{ parameters.jarUrl }}..."
       wget -O package.jar "${{ parameters.jarUrl }}"
       
-      echo "Verifying downloaded file:"
-      ls -lh package.jar
-      file package.jar || true
-      
-      echo "Deploying to Azure Artifacts..."
-      # Capture Maven output to a file so we can extract the exact error
-      if ! mvn -e deploy:deploy-file \
+      echo "Deploying to Google Artifact Registry..."
+      # We reference pom_sample.xml so Maven loads the Google Wagon extension
+      mvn deploy:deploy-file \
+        -f pom_sample.xml \
         -DgroupId="${{ parameters.groupId }}" \
         -DartifactId="${{ parameters.artifactId }}" \
         -Dversion="${{ parameters.version }}" \
         -Dpackaging="jar" \
         -Dfile="package.jar" \
-        -DrepositoryId="$(System.TeamProject)/$(feedName)" \
-        -Durl="https://pkgs.dev.azure.com/$(adoOrg)/$(adoProject)/_packaging/$(feedName)/maven/v1" > mvn_output.log 2>&1; then
-        
-        echo "======================================================================"
-        echo "MAVEN DEPLOYMENT FAILED!"
-        echo "Extracting the exact HTTP error from Azure Artifacts:"
-        grep -i "Return code is:" mvn_output.log || echo "Could not find HTTP return code in log."
-        grep -i "status code:" mvn_output.log || true
-        echo "======================================================================"
-        echo "Last 20 lines of Maven log:"
-        tail -n 20 mvn_output.log
-        exit 1
-      fi
+        -DrepositoryId="artifact-registry" \
+        -Durl="artifactregistry://$(googleArtifactRegistryUrl)"
       
       echo "Deployment successful!"
