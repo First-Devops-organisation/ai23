@@ -39,4 +39,4 @@ stages:
             pwsh: true
             targetType: 'filePath'
             filePath: "scripts/pipeline-push-pip-package.sh"
-            # arguments: -o '$(adoOrgName)' -f '$(feedName)' -p '${{parameters.package}}' -r $(PYPIRC_PATH)
+            arguments: -o '$(adoOrgName)' -f '$(feedName)' -p '${{parameters.package}}' -r $(PYPIRC_PATH)
