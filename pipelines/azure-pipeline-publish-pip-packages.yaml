@@ -50,14 +50,25 @@ steps:
       file package.jar || true
       
       echo "Deploying to Azure Artifacts..."
-      # Added -X for full debug logging to capture the exact HTTP error code
-      mvn -X -e deploy:deploy-file \
+      # Capture Maven output to a file so we can extract the exact error
+      if ! mvn -e deploy:deploy-file \
         -DgroupId="${{ parameters.groupId }}" \
         -DartifactId="${{ parameters.artifactId }}" \
         -Dversion="${{ parameters.version }}" \
         -Dpackaging="jar" \
         -Dfile="package.jar" \
         -DrepositoryId="$(System.TeamProject)/$(feedName)" \
-        -Durl="https://pkgs.dev.azure.com/$(adoOrg)/$(adoProject)/_packaging/$(feedName)/maven/v1"
+        -Durl="https://pkgs.dev.azure.com/$(adoOrg)/$(adoProject)/_packaging/$(feedName)/maven/v1" > mvn_output.log 2>&1; then
+        
+        echo "======================================================================"
+        echo "MAVEN DEPLOYMENT FAILED!"
+        echo "Extracting the exact HTTP error from Azure Artifacts:"
+        grep -i "Return code is:" mvn_output.log || echo "Could not find HTTP return code in log."
+        grep -i "status code:" mvn_output.log || true
+        echo "======================================================================"
+        echo "Last 20 lines of Maven log:"
+        tail -n 20 mvn_output.log
+        exit 1
+      fi
       
       echo "Deployment successful!"
