@@ -69,9 +69,10 @@ for whl in $TEMPDIR/*.whl; do
         
         if [ -n "$PKG_DIR_INTERNAL" ]; then
             echo "  Repacking wheel..."
+            # Delete the original wheel first to avoid overwriting/deletion conflicts
+            rm -f "$whl"
             if python3 -m wheel pack "$PKG_DIR_INTERNAL" -d "$TEMPDIR"; then
                 echo "  Successfully cleaned $whl"
-                rm -f "$whl"
             else
                 echo "  Failed to repack wheel $whl"
             fi
