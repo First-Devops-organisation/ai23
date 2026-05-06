@@ -40,6 +40,36 @@ echo "creating temp directory"
 sudo mkdir -p $TEMPDIR
 sudo dir
 echo "downloading package $PACKAGE"
-sudo pip wheel $PACKAGE -w $TEMPDIR
-echo "Uploading packge $PACKAGE to $FEED via URL $URL"
-twine upload -r $FEED  --disable-progress-bar --config-file $PYPIRCPATH $TEMPDIR/*
+sudo python3 -m pip wheel $PACKAGE -w $TEMPDIR
+# Ensure the current user can read/write the downloaded wheels
+sudo chown -R $(whoami):$(whoami) $TEMPDIR
+
+echo "Cleaning metadata for Azure Artifacts compatibility"
+for whl in $TEMPDIR/*.whl; do
+    if [ ! -f "$whl" ]; then continue; fi
+    echo "Processing $whl"
+    # Create a unique temp dir for unpacking
+    UNPACK_DIR=$(mktemp -d)
+    python3 -m wheel unpack "$whl" -d "$UNPACK_DIR"
+    
+    # Find the METADATA file and remove offending lines
+    # Azure Artifacts rejects 'License-File' and 'License-Files' in some cases
+    find "$UNPACK_DIR" -name "METADATA" -exec sed -i '/^License-File/d' {} +
+    
+    # Find the actual package directory inside UNPACK_DIR
+    PKG_DIR_INTERNAL=$(find "$UNPACK_DIR" -mindepth 1 -maxdepth 1 -type d)
+    
+    if [ -n "$PKG_DIR_INTERNAL" ]; then
+        # Repack to TEMPDIR
+        python3 -m wheel pack "$PKG_DIR_INTERNAL" -d "$TEMPDIR"
+        # Remove the original wheel
+        rm -f "$whl"
+    fi
+    
+    # Clean up temp dir
+    rm -rf "$UNPACK_DIR"
+done
+
+echo "Uploading package $PACKAGE"
+# Use the config file provided by TwineAuthenticate task
+python3 -m twine upload -r $FEED --disable-progress-bar --config-file $PYPIRCPATH $TEMPDIR/*
