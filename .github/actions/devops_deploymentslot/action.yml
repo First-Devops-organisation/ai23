@@ -1,0 +1,5 @@
+name: DevOps_Deploymentslot
+runs:
+  using: composite
+  steps:
+  - uses: First-Devops-organisation/migration-central/.github/actions/deploy_deploymentslot@main
