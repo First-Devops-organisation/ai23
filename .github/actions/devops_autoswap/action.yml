@@ -1,0 +1,5 @@
+name: DevOps_autoswap
+runs:
+  using: composite
+  steps:
+  - uses: First-Devops-organisation/migration-central/.github/actions/deploy_swapdeployment@main
